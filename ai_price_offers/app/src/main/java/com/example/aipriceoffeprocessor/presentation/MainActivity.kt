@@ -15,16 +15,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import android.net.Uri
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.font.FontWeight // Added missing import
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.graphics.Bitmap
+import android.content.Context
+import java.io.File
+import java.io.FileOutputStream
+import androidx.core.content.FileProvider
+import androidx.activity.result.contract.ActivityResultContracts
+import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +54,23 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen() {
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        bitmap?.let {
+            imageUri = bitmapToUri(context, it)
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        imageUri = uri
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -53,24 +86,41 @@ fun MainScreen() {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceAround
+            verticalArrangement = Arrangement.Bottom
         ) {
-            CustomButton(text = "Analizar")
+            imageUri?.let {
+                AsyncImage(
+                    model = it,
+                    contentDescription = "Selected Image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f) // Take remaining space
+                        .padding(16.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CustomButton(text = "Tomar foto")
-                CustomButton(text = "Cargar foto")
+                CustomButton(text = "Tomar foto") {
+                    cameraLauncher.launch(null) // Launch camera
+                }
+                CustomButton(text = "Cargar foto") {
+                    galleryLauncher.launch("image/*") // Launch gallery
+                }
+            }
+            CustomButton(text = "Analizar") {
+                // Handle analyze button click
             }
         }
     }
 }
 
 @Composable
-fun CustomButton(text: String) {
+fun CustomButton(text: String, onClick: () -> Unit) {
     Button(
-        onClick = { /*TODO*/ },
+        onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEBEBEB)),
         modifier = Modifier.padding(16.dp)
@@ -81,6 +131,22 @@ fun CustomButton(text: String) {
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
+    val imagesFolder = File(context.cacheDir, "images")
+    imagesFolder.mkdirs()
+    val file = File(imagesFolder, "selected_image_${System.currentTimeMillis()}.jpg")
+    return try {
+        val stream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream)
+        stream.flush()
+        stream.close()
+        FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }
 
