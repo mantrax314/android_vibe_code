@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="llm_prompt">
+        Vas a ser una app para hacer cálculos de los precios de artículos de supermercado utilizando los casos de ejemplo que se te mostraran:
+
+        Ejemplo:
+
+        Si tienes un texto similar a:
+
+        ```
+
+        DÍA DE VERTE Y SENTIRTE BIEN
+
+
+        MEGASUPER
+
+        AHORRO TODOS LOS DÍAS
+
+
+        CAFÉ DE ALTURA
+
+        Montaña
+
+
+        Molido
+
+        CONTENIDO NETO
+
+        500 g
+
+
+        100%
+
+        PURO CAFÉ
+
+
+        Café de Altura
+
+        Montaña
+
+
+        ¢4.100
+
+
+        ANTES: ¢5.390
+
+
+        CAFÉ MOLIDO
+
+        MONTAÑA, 500 G.
+
+
+        APLICAN RESTRICCIONES. VER REGLAMENTO.
+
+        ```
+
+
+        Vas a calcular el precio por unidad minima ejemplo
+
+        Precio 4.100 / 500 G sera igual a 8,2 por gramo
+
+
+        Como es una sola unidad entonces el precio unitario seria 4.100 colones
+
+
+        salida
+
+        ```json
+
+        {
+
+
+          "lugar_venta": "Megasuper",
+
+          "producto": "CAFÉ MOLIDO MONTAÑA, 500 G.",
+
+          "cantidades":[
+
+            {"medida":"g", "cantidad":500},
+
+            {"medida":"unidad", "cantidad":1},
+
+          ],
+
+          "precio_por_unidad": 4100,
+
+          "unidad_minima": "gr",
+
+          "precio_unidad_minima": 8.2
+
+
+        }
+
+        ```
+
+
+        Otro Ejemplo:
+
+        Si obtienes un texto asi:
+
+        ```
+
+        DÍA DE VERTE Y SENTIRTE BIEN
+
+
+        MEGASUPER
+
+        AHORRO TODOS LOS DÍAS
+
+
+        FANTA
+
+        Kolita
+
+
+        FANTA
+
+        Kolita
+
+
+        2X
+
+
+        ¢3.850
+
+
+        ANTES: 2X ¢4.620
+
+
+        GASEOSA FANTA
+
+        KOLITA 3000 ML. C/U.
+
+
+        APLICAN RESTRICCIONES. VER REGLAMENTO.
+
+        ```
+
+        LA oferta son 2 al precio de 3850
+
+        debes decir que la unidad sale en 3.850/2 o sea 1925
+
+        Como cada gaseosa tiene 3000 ML el precio por unidad minima ML serian
+
+        3850 / (3000*2) = 0,64 por ML
+
+
+
+        salida
+
+        ```json
+
+        {
+
+
+          "lugar_venta": "Megasuper",
+
+          "producto": "FANTA Kolita",
+
+          "cantidades":[
+
+            {"medida":"ml", "cantidad":3000},
+
+            {"medida":"unidad", "cantidad":2},
+
+          ],
+
+          "precio_por_unidad": 1925,
+
+          "unidad_minima": "ml",
+
+          "precio_unidad_minima": 0.64
+
+
+        }
+
+        ```
+
+
+        Ejemplo 3:
+
+        ```
+
+        12 Unidades 1 Litro Coronado 100% Leche De Vaca Semidescremada Larga Vida % Grasa Coronado 12 Unidades 1 Litro Coronado 100% Leche Semid Rebaja ¢10.700 Antes: ¢11.860 Leche semidescremada Coronado, paquete de 12, 1L. LA LECHE MATERNA Recibí tu pedido en 120 min\* Plazo mínimo de entrega: 120 minutos. Aplican restricciones, ver reglamento en [https://www.google.com/search?q=masxmenos.com](https://www.google.com/search?q=masxmenos.com) Válido del 20 al 24 de junio de 2025.
+
+        ```
+
+        Vas a calcular el precio unitario  Es un paquete de 12 unidades y cuesta en total 10.700 : 10700/12 = 891,67
+
+        Vas a calcular el precio de unidad minima: Si viene en L la unidad minima son mililitros
+
+        1 L son 1000 ml 12 unidades de 1L son 12000 ml El precio de unidad minima serian 10.700/12000 =0,891
+
+
+        salida
+
+        ```json
+
+        {
+
+
+          "lugar_venta": "Masxmenos",
+
+          "producto": "Coronado 100% Leche De Vaca Semidescremada Larga Vida % Grasa Coronado",
+
+          "cantidades":[
+
+            {"medida":"l", "cantidad":1},
+
+            {"medida":"unidad", "cantidad":12},
+
+          ],
+
+          "precio_por_unidad": 891.67,
+
+          "unidad_minima": "ml",
+
+          "precio_unidad_minima": 0.891
+
+
+        }
+
+        ```
+
+
+        Ejemplo 4:
+
+
+        ```
+
+        Hasta Combiná y ahorrá 33% en snacks seleccionados JACK\'S PICARITAS Tortillas de Maíz extra crujientes Barbecue JACK\'S PICARITAS JALAPEÑAS crujientes de maíz entero con sabor a jalapeño y queso JACK\'S PICARONAS SABOR A QUESO NACHO ICANTE JACK\'S PICARONAS SABOR A QUESO NACHO 3x2 Precio Unitario ¢990 Snack Picarona\'s Jack\'s Queso Nacho / picante / Picaritas Jalapeñas / Barbacoa, 150 g. Válido del 20 al 24 de junio de 2025. Recibí tu pedido en 120 min* Plazo mínimo de entrega: 120 minutos. Aplican restricciones, ver reglamento en masxmenos.cr
+
+        ```
+
+
+        Vas a calcular el precio unitario: Vienen 3 unidades Cada una cuesta 990 pero cobran solamente 2
+
+        El precio unitario seria igual a (990*2)/3 = 660 cada una sale en 660
+
+        Vas a calcular el precio de unidad minima: la unidad minima es g cada unidad pesa 150g vienen 3 unidades pero solo te cobran 2
+
+        entonces se calcularia (990*2)/(150*3)=4,4
+
+
+        salida
+
+        ```json
+
+        {
+
+
+          "lugar_venta": "Masxmenos",
+
+          "producto": "Snacks seleccionados",
+
+          "cantidades":[
+
+            {"medida":"g", "cantidad":150},
+
+            {"medida":"unidad", "cantidad":3},
+
+          ],
+
+          "precio_por_unidad": 660,
+
+          "unidad_minima": "g",
+
+          "precio_unidad_minima": 4.4
+
+
+        }
+
+        ```
+
+
+        Ejemplo 5:
+
+        ```
+
+        Aquí tienes el texto extraído de la imagen:
+
+
+        peri A solo ¢1.470 Papel higiénico Scott jumbo, 6 unidades Precio normal: ¢1.840 Ahorro: ¢370 Pida también por: 7108-9641 SUAVIDAD Y RESISTENCIA Scott 2en1 Suave y resistente PAPEL HIGIÉNICO DOBLE HOJA 6 Jumbo rollos Válido del 27 de junio al 29 de junio de 2025. No aplica con otras promociones. Ver cantidad disponible en el supermercado. Máximo 3 ofertas por persona al día. Sujeto a cambio de precio. Ver restricciones en página web. Imágenes con fines ilustrativos. Aplica para compra en tienda física. Aplican restricciones.
+
+        ```
+
+
+        Vas a calcular el precio unitario: Vienen 6 unidades El costo de venta 1.470. El precio unitario seria 1.470/6 = 245
+
+        Vas a calcular el precio de unidad minima: como venden por Unidad la unidad minima es Unidad, el paquete cuesta 1.470 y vienen 6 entonces 1.470/6 = 245 = 245
+
+
+        salida
+
+        ```json
+
+        {
+
+
+          "lugar_venta": "Peri",
+
+          "producto": "Papel higiénico Scott jumbo",
+
+          "cantidades":[
+
+            {"medida":"paquete", "cantidad":1},
+
+            {"medida":"unidades", "cantidad":6},
+
+          ],
+
+          "precio_por_unidad": 245,
+
+          "unidad_minima": "unidades",
+
+          "precio_unidad_minima": 245
+
+
+        }
+
+        ```
+
+
+
+        Usando los  ejemplos anteriores, realiza el procesamiento necesario con la siguiente información:
+    </string>
+</resources>
