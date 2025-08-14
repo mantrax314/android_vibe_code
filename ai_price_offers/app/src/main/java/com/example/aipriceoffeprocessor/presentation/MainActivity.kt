@@ -40,7 +40,15 @@ import androidx.core.content.FileProvider
 import androidx.activity.result.contract.ActivityResultContracts
 import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
-
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import androidx.compose.material3.CircularProgressIndicator
+import android.content.ClipboardManager
+import android.content.ClipData
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
+import com.google.mlkit.vision.common.InputImage
+import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,13 +63,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var analysisResult by remember { mutableStateOf<String?>(null) }
+    var isAnalyzing by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         bitmap?.let {
             imageUri = bitmapToUri(context, it)
+            analysisResult = null
         }
     }
 
@@ -69,6 +81,7 @@ fun MainScreen() {
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         imageUri = uri
+        analysisResult = null
     }
 
     Box(
@@ -88,39 +101,62 @@ fun MainScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Bottom
         ) {
-            imageUri?.let {
-                AsyncImage(
-                    model = it,
-                    contentDescription = "Selected Image",
+            if (analysisResult != null) {
+                Text(
+                    text = analysisResult!!,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // Take remaining space
-                        .padding(16.dp),
-                    contentScale = ContentScale.Fit
+                        .weight(1f)
+                        .padding(16.dp)
                 )
+            } else {
+                imageUri?.let {
+                    AsyncImage(
+                        model = it,
+                        contentDescription = "Selected Image",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f) // Take remaining space
+                            .padding(16.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+            }
+            if (isAnalyzing) {
+                CircularProgressIndicator(modifier = Modifier.padding(16.dp))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CustomButton(text = "Tomar foto") {
+                CustomButton(text = "Tomar foto", onClick = {
                     cameraLauncher.launch(null) // Launch camera
-                }
-                CustomButton(text = "Cargar foto") {
+                })
+                CustomButton(text = "Cargar foto", onClick = {
                     galleryLauncher.launch("image/*") // Launch gallery
+                })
+            }
+            CustomButton(text = "Analizar", enabled = imageUri != null && !isAnalyzing, onClick = {
+                coroutineScope.launch {
+                    isAnalyzing = true
+                    analysisResult = analyzeImage(context, imageUri!!)
+                    isAnalyzing = false
                 }
-            }
-            CustomButton(text = "Analizar") {
-                // Handle analyze button click
-            }
+            })
+            CustomButton(text = "Copiar", enabled = analysisResult != null, onClick = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("analysis", analysisResult)
+                clipboard.setPrimaryClip(clip)
+            })
         }
     }
 }
 
 @Composable
-fun CustomButton(text: String, onClick: () -> Unit) {
+fun CustomButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEBEBEB)),
         modifier = Modifier.padding(16.dp)
@@ -147,6 +183,19 @@ private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
     } catch (e: Exception) {
         e.printStackTrace()
         null
+    }
+}
+
+private suspend fun analyzeImage(context: Context, imageUri: Uri): String {
+    return try {
+        val image = InputImage.fromFilePath(context, imageUri)
+        val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+        val labels = labeler.process(image).await()
+        val result = labels.joinToString(separator = "\n") { "${it.text} (${it.confidence})" }
+        result
+    } catch (e: Exception) {
+        e.printStackTrace()
+        "Error analyzing image: ${e.message}"
     }
 }
 

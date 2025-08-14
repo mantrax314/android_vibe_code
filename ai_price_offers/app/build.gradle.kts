@@ -49,7 +49,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation("io.coil-kt:coil-compose:2.6.0") // Added Coil dependency
+    implementation("io.coil-kt:coil-compose:2.7.0") // Added Coil dependency
+    implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
