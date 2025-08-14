@@ -50,7 +50,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation("io.coil-kt:coil-compose:2.7.0") // Added Coil dependency
-    implementation("com.google.mlkit:image-labeling:17.0.9")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

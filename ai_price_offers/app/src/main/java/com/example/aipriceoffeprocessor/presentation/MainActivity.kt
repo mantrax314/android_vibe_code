@@ -45,9 +45,9 @@ import kotlinx.coroutines.launch
 import androidx.compose.material3.CircularProgressIndicator
 import android.content.ClipboardManager
 import android.content.ClipData
-import com.google.mlkit.vision.label.ImageLabeling
-import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.tasks.await
 
 class MainActivity : ComponentActivity() {
@@ -189,10 +189,9 @@ private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
 private suspend fun analyzeImage(context: Context, imageUri: Uri): String {
     return try {
         val image = InputImage.fromFilePath(context, imageUri)
-        val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
-        val labels = labeler.process(image).await()
-        val result = labels.joinToString(separator = "\n") { "${it.text} (${it.confidence})" }
-        result
+        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        val result = recognizer.process(image).await()
+        result.text
     } catch (e: Exception) {
         e.printStackTrace()
         "Error analyzing image: ${e.message}"
