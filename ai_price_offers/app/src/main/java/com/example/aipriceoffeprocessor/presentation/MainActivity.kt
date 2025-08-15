@@ -1,9 +1,16 @@
 package com.example.aipriceoffeprocessor.presentation
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,40 +22,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import android.net.Uri
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight // Added missing import
-import androidx.activity.compose.rememberLauncherForActivityResult
-import android.graphics.Bitmap
-import android.content.Context
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import java.io.File
 import java.io.FileOutputStream
-import androidx.core.content.FileProvider
-import androidx.activity.result.contract.ActivityResultContracts
-import coil.compose.AsyncImage
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import androidx.compose.material3.CircularProgressIndicator
-import android.content.ClipboardManager
-import android.content.ClipData
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,10 +135,10 @@ fun MainScreen() {
                     galleryLauncher.launch("image/*") // Launch gallery
                 })
             }
-            CustomButton(text = "Analizar", enabled = imageUri != null && !isAnalyzing, onClick = {
+            CustomButton(text = "Analizar", enabled = !isAnalyzing, onClick = {
                 coroutineScope.launch {
                     isAnalyzing = true
-                    analysisResult = analyzeImage(context, imageUri!!)
+                    analysisResult = analyzeWithGemma(context)
                     isAnalyzing = false
                 }
             })
@@ -186,17 +185,22 @@ private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
     }
 }
 
-private suspend fun analyzeImage(context: Context, imageUri: Uri): String {
-    return try {
-        val image = InputImage.fromFilePath(context, imageUri)
-        val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
-        val result = recognizer.process(image).await()
-        result.text
-    } catch (e: Exception) {
-        e.printStackTrace()
-        "Error analyzing image: ${e.message}"
+private suspend fun analyzeWithGemma(context: Context): String {
+    return withContext(Dispatchers.IO) {
+        try {
+            val options = LlmInference.LlmInferenceOptions.builder()
+                .setModelPath("/data/local/tmp/llm/gemma-2b-it-cpu-2n.bin")
+                .build()
+            val llmInference = LlmInference.createFromOptions(context, options)
+            val result = llmInference.generateResponse("Say Hi in Italian")
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "Error analyzing with Gemma: ${e.message}"
+        }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
