@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,13 +102,17 @@ fun MainScreen() {
             verticalArrangement = Arrangement.Bottom
         ) {
             if (analysisResult != null) {
-                Text(
-                    text = analysisResult!!,
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f)
                         .padding(16.dp)
-                )
+                ) {
+                    Text(
+                        text = analysisResult!!,
+                        modifier = Modifier
+                            .padding(16.dp)
+                    )
+                }
             } else {
                 imageUri?.let {
                     AsyncImage(
