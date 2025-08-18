@@ -189,7 +189,7 @@ private suspend fun analyzeWithGemma(context: Context): String {
     return withContext(Dispatchers.IO) {
         try {
             val options = LlmInference.LlmInferenceOptions.builder()
-                .setModelPath("/data/local/tmp/llm/gemma-2b-it-cpu-2n.bin")
+                .setModelPath("/data/local/tmp/llm/gemma-3n-E4B-it-int4.task")
                 .build()
             val llmInference = LlmInference.createFromOptions(context, options)
             val result = llmInference.generateResponse("Say Hi in Italian")
