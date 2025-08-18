@@ -221,6 +221,7 @@ private suspend fun analyzeWithGemma(context: Context, extractedText: String): S
         try {
             val options = LlmInference.LlmInferenceOptions.builder()
                 .setModelPath("/data/local/tmp/llm/gemma-3n-E4B-it-int4.task")
+                .setMaxTokens(2500)
                 .build()
             val llmInference = LlmInference.createFromOptions(context, options)
             val prompt = context.getString(R.string.llm_prompt)
