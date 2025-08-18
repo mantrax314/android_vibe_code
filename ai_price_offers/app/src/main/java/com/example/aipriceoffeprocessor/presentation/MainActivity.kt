@@ -44,6 +44,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.google.android.gms.tasks.Tasks
+import com.example.aipriceoffeprocessor.R
 import java.io.File
 import java.io.FileOutputStream
 import kotlinx.coroutines.Dispatchers
@@ -140,13 +145,20 @@ fun MainScreen() {
                     galleryLauncher.launch("image/*") // Launch gallery
                 })
             }
-            CustomButton(text = "Analizar", enabled = !isAnalyzing, onClick = {
-                coroutineScope.launch {
-                    isAnalyzing = true
-                    analysisResult = analyzeWithGemma(context)
-                    isAnalyzing = false
+            CustomButton(
+                text = "Analizar",
+                enabled = !isAnalyzing && imageUri != null,
+                onClick = {
+                    imageUri?.let {
+                        coroutineScope.launch {
+                            isAnalyzing = true
+                            val extractedText = processImage(context, it)
+                            analysisResult = analyzeWithGemma(context, extractedText)
+                            isAnalyzing = false
+                        }
+                    }
                 }
-            })
+            )
             CustomButton(text = "Copiar", enabled = analysisResult != null, onClick = {
                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 val clip = ClipData.newPlainText("analysis", analysisResult)
@@ -190,14 +202,30 @@ private fun bitmapToUri(context: Context, bitmap: Bitmap): Uri? {
     }
 }
 
-private suspend fun analyzeWithGemma(context: Context): String {
+private suspend fun processImage(context: Context, uri: Uri): String {
+    return withContext(Dispatchers.IO) {
+        try {
+            val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+            val image = InputImage.fromFilePath(context, uri)
+            val result = Tasks.await(recognizer.process(image))
+            result.text
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "Error processing image: ${e.message}"
+        }
+    }
+}
+
+private suspend fun analyzeWithGemma(context: Context, extractedText: String): String {
     return withContext(Dispatchers.IO) {
         try {
             val options = LlmInference.LlmInferenceOptions.builder()
                 .setModelPath("/data/local/tmp/llm/gemma-3n-E4B-it-int4.task")
                 .build()
             val llmInference = LlmInference.createFromOptions(context, options)
-            val result = llmInference.generateResponse("Say Hi in Italian")
+            val prompt = context.getString(R.string.llm_prompt)
+            val fullPrompt = "$prompt\n$extractedText"
+            val result = llmInference.generateResponse(fullPrompt)
             result
         } catch (e: Exception) {
             e.printStackTrace()
