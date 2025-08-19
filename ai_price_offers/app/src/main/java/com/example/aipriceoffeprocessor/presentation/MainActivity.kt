@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -111,12 +113,15 @@ fun MainScreen() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
+                        .weight(1f, fill = false)
                 ) {
-                    Text(
-                        text = analysisResult!!,
-                        modifier = Modifier
-                            .padding(16.dp)
-                    )
+                    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                        Text(
+                            text = analysisResult!!,
+                            modifier = Modifier
+                                .padding(16.dp)
+                        )
+                    }
                 }
             } else {
                 imageUri?.let {
