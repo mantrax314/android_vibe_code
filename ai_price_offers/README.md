@@ -6,6 +6,11 @@
 https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/android
 
 
+## Repository dependency 
+
+### tasks-genai
+https://mvnrepository.com/artifact/com.google.mediapipe/tasks-genai/
+
 ## Hugginface documentation
 https://huggingface.co/google/gemma-3n-E4B-it-litert-preview?clone=true
 
